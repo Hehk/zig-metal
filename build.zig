@@ -8,25 +8,6 @@ pub const Package = struct {
     }
 };
 
-// const stdout = std.io.getStdOut().writer();
-pub fn package(b: *std.Build) Package {
-    return .{
-        .module = b.createModule(
-            .{
-                .root_source_file = b.path("src/main.zig"),
-                .imports = &.{.{
-                    .name = "zigtrait",
-                    .module = zigTraitModule(b),
-                }},
-            },
-        ),
-    };
-}
-
-pub fn zigTraitModule(b: *std.Build) *std.Build.Module {
-    return b.createModule(.{ .root_source_file = b.path("libs/zigtrait/src/zigtrait.zig") });
-}
-
 pub fn addExample(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
@@ -42,11 +23,9 @@ pub fn addExample(
     });
 
     b.installArtifact(exe);
+    const module = b.createModule(.{ .root_source_file = b.path("src/main.zig") });
+    exe.root_module.addImport("zig-metal", module);
 
-    var pkg = package(b);
-
-    pkg.link(exe);
-    // exe.addModule("zigtrait", zigTraitModule(b));
     exe.linkFramework("Foundation");
     exe.linkFramework("AppKit");
     exe.linkFramework("Metal");

@@ -1,6 +1,6 @@
 const std = @import("std");
 const gen = @import("gen.zig");
-const trait = @import("zigtrait");
+const trait = @import("trait.zig");
 
 const objc_msgSend = gen.objc_msgSend;
 const id = gen.id;
