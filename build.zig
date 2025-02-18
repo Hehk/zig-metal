@@ -3,41 +3,40 @@ const std = @import("std");
 pub const Package = struct {
     module: *std.Build.Module,
 
-    pub fn link(pkg: Package, exe: *std.Build.CompileStep) void {
-        exe.addModule("zig-metal", pkg.module);
+    pub fn link(pkg: Package, exe: *std.Build.Step.Compile) void {
+        exe.root_module.addImport("zig-metal", pkg.module);
     }
 };
 
+// const stdout = std.io.getStdOut().writer();
 pub fn package(b: *std.Build) Package {
     return .{
         .module = b.createModule(
             .{
-                .source_file = .{ .path = thisDir() ++ "/src/main.zig" },
-                .dependencies = &[_]std.build.ModuleDependency{
-                    .{
-                        .name = "zigtrait",
-                        .module = zigTraitModule(b),
-                    },
-                },
+                .root_source_file = b.path("src/main.zig"),
+                .imports = &.{.{
+                    .name = "zigtrait",
+                    .module = zigTraitModule(b),
+                }},
             },
         ),
     };
 }
 
 pub fn zigTraitModule(b: *std.Build) *std.Build.Module {
-    return b.createModule(.{ .source_file = .{ .path = thisDir() ++ "/libs/zigtrait/src/zigtrait.zig" } });
+    return b.createModule(.{ .root_source_file = b.path("libs/zigtrait/src/zigtrait.zig") });
 }
 
 pub fn addExample(
     b: *std.Build,
-    target: std.zig.CrossTarget,
+    target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     comptime name: []const u8,
     comptime path: []const u8,
 ) void {
     const exe = b.addExecutable(.{
         .name = name,
-        .root_source_file = .{ .path = path ++ "/main.zig" },
+        .root_source_file = b.path(path ++ "/main.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -73,8 +72,4 @@ pub fn build(b: *std.Build) void {
     addExample(b, target, optimize, "texturing", "examples/08-texturing");
     addExample(b, target, optimize, "compute", "examples/09-compute");
     addExample(b, target, optimize, "compute-to-render", "examples/10-compute_to_render");
-}
-
-inline fn thisDir() []const u8 {
-    return comptime std.fs.path.dirname(@src().file) orelse ".";
 }
